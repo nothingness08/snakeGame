@@ -1,0 +1,46 @@
+* {
+  box-sizing: border-box;
+}
+
+.tile1 {
+  background: #4bbe51;
+  height: 30px;
+  width: 30px;
+  padding: 0;
+  float: left;
+}
+
+.tile2 {
+  background: #06830c;
+  height: 30px;
+  width: 30px;
+  padding: 0;
+  float: left;
+}
+
+.border {
+  background: #000000;
+  height: 30px;
+  width: 30px;
+  padding: 0;
+  float: left;
+}
+
+.snake {
+  background: #265cee;
+  height: 30px;
+  width: 30px;
+  padding: 0;
+  float: left;
+}
+
+.board-row:after {
+  clear: both;
+  content: "";
+  display: table;
+}
+
+
+.array{
+  font-size: 12px;
+}
