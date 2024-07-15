@@ -10,8 +10,8 @@
     "deploy": "yarn build && npx thirdweb@latest upload build"
   },
   "dependencies": {
+    "next": "14.2.4",
     "react": "^18",
-    "react-dom": "^18",
-    "next": "14.2.4"
+    "react-dom": "^18"
   }
 }

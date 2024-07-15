@@ -1,4 +1,8 @@
+/*
+  notes: cordinate system starts top left
+*/
 "use client"; 
+// import { init } from "next/dist/compiled/webpack/webpack";
 import "./globals.css"; //get css styles like tile1, tile2, and border
 import { useCallback, useEffect, useState } from 'react'; //import functions from react library
 
@@ -17,6 +21,51 @@ function getRandomInt(max) {
   return Math.floor(Math.random() * max); //Math.random is a random decimal from 0 to 1, so multiplying it by 5 can yield 0 through 5
 }
 
+function wordImages(ending, index){
+  if(ending == "ing" && index == 0) return `/images/ring.png`
+  else if(ending == "ing" && index == 1) return `/images/drink.png`
+  else if(ending == "ang" && index == 0) return`/images/fang.png`
+  else if(ending == "ang" && index == 1) return`/images/king.png`
+  else if(ending == "ong" && index == 0) return`/images/strong.png`
+  else if(ending == "ong" && index == 1) return`/images/swing.png`
+  else if(ending == "ung" && index == 0) return`/images/stung.png`
+  else if(ending == "ung" && index == 1) return`/images/stink.png`
+  else if(ending == "ank" && index == 0) return`/images/bank.png`
+  else if(ending == "ank" && index == 1) return`/images/junk.png`
+  else if(ending == "ink" && index == 0) return`/images/pink.png`
+  else if(ending == "ink" && index == 1) return`/images/wing.png`
+}
+
+function randomObjPos(snakePos, otherObj){
+  let initialObjPos = [];
+  let openTile = true;
+  do{
+    openTile = true;
+    initialObjPos = [getRandomInt(14) + 1, getRandomInt(12) + 1];
+    for(let i = 0; i < snakePos.length; i++){
+      if(arraysEqual(initialObjPos, snakePos[i])){
+        openTile = false;
+        break;
+      }
+    }
+    if(arraysEqual(initialObjPos, otherObj)){
+      openTile = false;
+    }
+  }while(!openTile)
+  return initialObjPos
+}
+
+function StartButton({onStartClick, gameState}){
+  if(gameState === 1){
+    return(<div></div>);
+  }
+  else if(gameState === 0){
+    return(
+      <button onClick={onStartClick}>start</button>
+    );
+  }
+}
+
 export default function Game() { //main function
   return ( //only returns the board, but you could add more UI elements to make it cleaner
     <div>
@@ -28,13 +77,32 @@ export default function Game() { //main function
 function Board(){ //board item
   const [snakePos, setSnakePos] = useState([[3,7], [2,7], [1,7]]); //set snake positions to starting position with head at index 0
   const [snakeDirection, setSnakeDirection] = useState("Right"); //the snake starts moving to the right
-  const [applePos, setApplePos] = useState([1,1]); //apple starts at (1,1), but is randomly moved at the start
+  const [obj1Pos, setObj1Pos] = useState([1,1]); //apple starts at (1,1), but is randomly moved at the start
+  const [obj2Pos, setObj2Pos] = useState([2,1]); 
   const [score, setScore] = useState(0); //score starts at zero
+  const [pastWords, setPastWords] = useState([]); //for tracking which words were used
+  const [currentWord, setCurrentWord] = useState("");
+  const [message, setMessage] = useState("");
+  const [canChangeDirection, setCanChangeDirection] = useState(true);
+  const wordEndings = ["ing", "ang", "ong", "ung", "ank", "ink"];
+  const [gameState, setGameState] = useState(0); //0 is off, 1 is on
+  
 
-  useEffect(() =>{ //only called once at the beginning
-    const initialApplePos = [getRandomInt(14) + 1, getRandomInt(12) + 1]; //sets variable to random cordinates on grid
-    setApplePos(initialApplePos); //set the apple position to cordinates
-  },[]);
+  useEffect(() =>{ 
+    if(gameState === 1){
+      setObj1Pos(randomObjPos(snakePos, obj2Pos)); 
+      setObj2Pos(randomObjPos(snakePos, obj1Pos));
+      let randomWordIndex = getRandomInt(wordEndings.length - 1)
+      let newWord = wordEndings[randomWordIndex];
+      setCurrentWord(newWord);
+      setSnakePos([[3,7], [2,7], [1,7]]);
+      setSnakeDirection("Right");
+      setScore(0);
+      // const addWord = (newWord) => {
+      //   setPastWords((previousWords) => [...previousWords, newWord]);
+      // };
+    }
+  },[gameState]);
 
   const handleDirectionChange = useCallback((event) => { //event handler thing, trigger on key press
     const newDirection = event.key.replace("Arrow", ""); //event.key returns the key that was pressed like "ArrowLeft", replace takes off the "Arrow" part
@@ -45,8 +113,9 @@ function Board(){ //board item
       "Down": "Up"
     };
     //if the key press is an arrow and it isn't in the opposite direction of current motion, set it to the new direction
-    if (["Up", "Down", "Left", "Right"].includes(newDirection) && directionMap[snakeDirection] !== newDirection) { 
+    if (["Up", "Down", "Left", "Right"].includes(newDirection) && directionMap[snakeDirection] !== newDirection && canChangeDirection) { 
       setSnakeDirection(newDirection);
+      //setCanChangeDirection(false); not working
     }
   }, [snakeDirection]);
 
@@ -56,17 +125,16 @@ function Board(){ //board item
     return () => {
       window.removeEventListener("keydown", handleDirectionChange); //removes listener because of something?
     };
-
   },[handleDirectionChange]);
   
 
   useEffect(() => { //changes when ever snakeDirection changes, it is at the bottom of the function
+    if(gameState === 1){
     const intervalID = setInterval(() => { //makes function run on time interval
       setSnakePos((prevSnakePos) => { //prevSnakePos = current value of snakePos, and the function part returns the new snakePos that setSnakePos takes in
         const newSnakePos = [...prevSnakePos]; //newSnakePos becomes a copy of currentSnakePos
         const [headX, headY] = newSnakePos[0]; //gets the current position of the head from first index, x y cords
         let newHead;
-
         switch (snakeDirection) { //take in direction of snake
           case "Right": 
             newHead = [headX + 1, headY]; //x + 1 if right
@@ -85,33 +153,45 @@ function Board(){ //board item
             break;
         }
 
-        if (borderCheck(newHead)) { //if new head is on the border stop the loop and set the snake back, so it doesn't go into the border
+        if (borderCheck(newHead) || newSnakePos.some(segment => arraysEqual(segment, newHead))) { 
           clearInterval(intervalID);
-          // alert("Game Over!");
+          setGameState(0);
           return prevSnakePos;
         }
-        if (newSnakePos.some(segment => arraysEqual(segment, newHead))) { //if snake head = one of its body, stop loop
-          clearInterval(intervalID);
+        if (arraysEqual(newHead, obj1Pos) || arraysEqual(newHead, obj2Pos)) { 
+          if(arraysEqual(newHead, obj1Pos)){
+            setObj1Pos(randomObjPos(snakePos, obj2Pos));
+            setObj2Pos(randomObjPos(snakePos, obj1Pos));
+            setScore(score + 1);
+            newSnakePos.unshift(newHead); 
+            let randomWordIndex = getRandomInt(wordEndings.length - 1)
+            let newWord = wordEndings[randomWordIndex];
+            setCurrentWord(newWord);
+            // const addWord = (newWord) => {
+            //   setPastWords((previousWords) => [...previousWords, newWord]);
+            // };
+            setMessage("Good Job");//temp
+          }
+          if(arraysEqual(newHead, obj2Pos)){
+            clearInterval(intervalID);
+            setMessage("Oops wrong image");//temp
+            setGameState(0);
+            return prevSnakePos;
+          }
+        } else { 
+          newSnakePos.pop(); 
+          newSnakePos.unshift(newHead);
         }
-        let [a,b] = newHead; //split up new head
-        const newHeadBR = [a,14-b]; //fix the cordinate system because I messed up
-        if (arraysEqual(newHeadBR, applePos)) { //if the new head is going to hit an apple
-          newSnakePos.unshift(newHead); //unshift adds the newHead array at the beginiing of newSnakePos
-          setScore(score + 1); //increase score by 1
-          let newApplePos = [getRandomInt(14) + 1, getRandomInt(12) + 1]; //random apple location
-          setApplePos(newApplePos); //move the apple
-        } else { //if didn't hit an apple, snake stays same length
-          newSnakePos.pop(); //get rid of last snakePos
-          newSnakePos.unshift(newHead); //add new head
-        }
-
-        return newSnakePos;//setSnakePos to newSnakePos
+        //setCanChangeDirection(true); not working
+        return newSnakePos;
       });
-    }, 200);
-
+    }, 150);
     return () => clearInterval(intervalID);
-  }, [snakeDirection]); //dependency, function re-runs when this changes
+  }
+  }, [snakeDirection, gameState]); //dependency, function re-runs when this changes
 
+  
+  
   //print all of the squares onto the screen with for loops and some screwed up cordinates
   const rows = [];
   for(let i = 0; i < 15; i++){
@@ -119,22 +199,31 @@ function Board(){ //board item
     for(let k = 0; k < 17; k++){
       const index = k + 17*i;
       const tilePos = [k,i];
-      const tilePosBR = [k,14 - i];
       const isSnake = snakePos.some((segment) => arraysEqual(segment, tilePos));
       if(isSnake){ //if the tile is a snake, style "snake"
-        tiles.push(
-          <div className="snake" key={`tile-${index}`} ></div>
-        )
+        if(arraysEqual(tilePos, snakePos[0])){ //snake head
+          tiles.push( //temp
+            <div className="snake" key={`tile-${index}`} >{currentWord}</div>
+          )
+        }
+        else{
+          tiles.push(
+            <div className="snake" key={`tile-${index}`} ></div>
+          )
+        }
       }
       else if(borderCheck(tilePos)){ //if the tile is border, "style border"
         tiles.push(
           <div key={`tile-${index}`} className='border' ></div>
         );
       }
-      else if(arraysEqual(applePos, tilePosBR)){//if the tile is apple, print apple picture with green background
-        const className = index % 2 === 0 ? 'tile1' : 'tile2'; //alternate styles
+      else if(arraysEqual(obj1Pos, tilePos) || arraysEqual(obj2Pos, tilePos)){
+        let num;
+        if(arraysEqual(obj1Pos, tilePos)) num = 0;
+        if(arraysEqual(obj2Pos, tilePos)) num = 1;
+        const className = index % 2 === 0 ? 'tile1' : 'tile2';
         tiles.push(
-          <div key={`tile-${index}`} className={className} style={{ backgroundImage: `url(${`/apple.png`})`, backgroundSize: 'cover' }}></div>
+          <div key={`tile-${index}`} className={className} style={{ backgroundImage: `url(${wordImages(currentWord, num)})`, backgroundSize: 'cover' }}></div>
         );
       }
       else{ //print tile with green background
@@ -150,15 +239,25 @@ function Board(){ //board item
       </div>
     )
   }
-  
-  return( //display the row with the tiles and the score
+  function handleClick(){
+    setGameState(1);
+  }
+  return( //code restart button, so hitting wrong image or wall stops game until reset
     <>
       <div>
         {rows}
       </div>
+      <StartButton onStartClick={() => handleClick()} gameState={gameState}/>
       <t1>Score: {score}</t1>
+      <div>
+        <t1>{message}</t1>
+      </div>
     </>
   );
 }
+
+
+
+
 
 
