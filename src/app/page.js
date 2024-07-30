@@ -256,7 +256,7 @@ function Board(){ //board item
         <button 
           className="arrow" 
           onClick={() => handleDirectionChange({key: "ArrowLeft"})}
-          style={{ backgroundImage: `url(/arrowleft.png)`, backgroundSize: 'cover' }}
+          style={{ backgroundImage: `url(/arrowLeft.png)`, backgroundSize: 'cover' }}
         ></button>
         <button 
           className="arrow" 
