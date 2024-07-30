@@ -44,3 +44,24 @@
 .array{
   font-size: 12px;
 }
+
+.top-buttons {
+  position: absolute;
+  left: 650px; /* Adjust the right spacing */
+  top: 20%;
+  transform: translateY(-30%);
+}
+
+.bottom-buttons {
+  position: absolute;
+  left: 550px; /* Adjust the right spacing */
+  top: 35%;
+  transform: translateY(-30%);
+}
+
+.arrow {
+  width: 100px;
+  height: 100px;
+  cursor: pointer;
+  background-size: cover;
+}

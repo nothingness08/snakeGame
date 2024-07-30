@@ -98,9 +98,6 @@ function Board(){ //board item
       setSnakePos([[3,7], [2,7], [1,7]]);
       setSnakeDirection("Right");
       setScore(0);
-      // const addWord = (newWord) => {
-      //   setPastWords((previousWords) => [...previousWords, newWord]);
-      // };
     }
   },[gameState]);
 
@@ -155,7 +152,7 @@ function Board(){ //board item
 
         if (borderCheck(newHead) || newSnakePos.some(segment => arraysEqual(segment, newHead))) { 
           clearInterval(intervalID);
-          setGameState(0);
+          // setGameState(0);
           return prevSnakePos;
         }
         if (arraysEqual(newHead, obj1Pos) || arraysEqual(newHead, obj2Pos)) { 
@@ -167,25 +164,21 @@ function Board(){ //board item
             let randomWordIndex = getRandomInt(wordEndings.length - 1)
             let newWord = wordEndings[randomWordIndex];
             setCurrentWord(newWord);
-            // const addWord = (newWord) => {
-            //   setPastWords((previousWords) => [...previousWords, newWord]);
-            // };
             setMessage("Good Job");//temp
           }
           if(arraysEqual(newHead, obj2Pos)){
             clearInterval(intervalID);
             setMessage("Oops wrong image");//temp
-            setGameState(0);
+            // setGameState(0);
             return prevSnakePos;
           }
         } else { 
           newSnakePos.pop(); 
           newSnakePos.unshift(newHead);
         }
-        //setCanChangeDirection(true); not working
         return newSnakePos;
       });
-    }, 150);
+    }, 200);
     return () => clearInterval(intervalID);
   }
   }, [snakeDirection, gameState]); //dependency, function re-runs when this changes
@@ -203,7 +196,7 @@ function Board(){ //board item
       if(isSnake){ //if the tile is a snake, style "snake"
         if(arraysEqual(tilePos, snakePos[0])){ //snake head
           tiles.push( //temp
-            <div className="snake" key={`tile-${index}`} >{currentWord}</div>
+            <div className="snake" key={`tile-${index}`} >{currentWord}</div> //put current word on snake front tile
           )
         }
         else{
@@ -252,12 +245,30 @@ function Board(){ //board item
       <div>
         <t1>{message}</t1>
       </div>
+      <div className="top-buttons">
+        <button 
+          className="arrow" 
+          onClick={() => handleDirectionChange({key: "ArrowUp"})}
+          style={{ backgroundImage: `url(/arrowUp.png)`, backgroundSize: 'cover' }}
+        ></button>
+      </div>
+      <div className="bottom-buttons">
+        <button 
+          className="arrow" 
+          onClick={() => handleDirectionChange({key: "ArrowLeft"})}
+          style={{ backgroundImage: `url(/arrowleft.png)`, backgroundSize: 'cover' }}
+        ></button>
+        <button 
+          className="arrow" 
+          onClick={() => handleDirectionChange({key: "ArrowDown"})}
+          style={{ backgroundImage: `url(/arrowDown.png)`, backgroundSize: 'cover' }}
+        ></button>
+        <button 
+          className="arrow" 
+          onClick={() => handleDirectionChange({key: "ArrowRight"})}
+          style={{ backgroundImage: `url(/arrowRight.png)`, backgroundSize: 'cover' }}
+        ></button>
+      </div>
     </>
   );
 }
-
-
-
-
-
-
