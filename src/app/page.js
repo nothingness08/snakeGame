@@ -17,24 +17,18 @@ function borderCheck(snakeHead){ //take in snake array, x and y cordinates
   return isOnBorder //return true or false
 }
 
-function getRandomInt(max) {
-  return Math.floor(Math.random() * max); //Math.random is a random decimal from 0 to 1, so multiplying it by 5 can yield 0 through 5
+function wordToEnding(word){
+  return word.slice(-3);
 }
 
-function wordImages(ending, index){
-  if(ending == "ing" && index == 0) return `/images/ring.png`
-  else if(ending == "ing" && index == 1) return `/images/drink.png`
-  else if(ending == "ang" && index == 0) return`/images/fang.png`
-  else if(ending == "ang" && index == 1) return`/images/king.png`
-  else if(ending == "ong" && index == 0) return`/images/strong.png`
-  else if(ending == "ong" && index == 1) return`/images/swing.png`
-  else if(ending == "ung" && index == 0) return`/images/stung.png`
-  else if(ending == "ung" && index == 1) return`/images/stink.png`
-  else if(ending == "ank" && index == 0) return`/images/bank.png`
-  else if(ending == "ank" && index == 1) return`/images/junk.png`
-  else if(ending == "ink" && index == 0) return`/images/pink.png`
-  else if(ending == "ink" && index == 1) return`/images/wing.png`
+function getRandomInt(max) {
+  return Math.floor(Math.random() * (max +1)); 
 }
+
+function wordImages(words, index, correct) {
+  return '/images/' + words[index[0]][correct] + '.png';
+}
+
 
 function randomObjPos(snakePos, otherObj){
   let initialObjPos = [];
@@ -80,11 +74,9 @@ function Board(){ //board item
   const [obj1Pos, setObj1Pos] = useState([1,1]); //apple starts at (1,1), but is randomly moved at the start
   const [obj2Pos, setObj2Pos] = useState([2,1]); 
   const [score, setScore] = useState(0); //score starts at zero
-  const [pastWords, setPastWords] = useState([]); //for tracking which words were used
-  const [currentWord, setCurrentWord] = useState("");
   const [message, setMessage] = useState("");
-  const [canChangeDirection, setCanChangeDirection] = useState(true);
-  const wordEndings = ["ing", "ang", "ong", "ung", "ank", "ink"];
+  const words = [["ring", "drink"], ["fang","king"], ["strong", "swing"],["stung", "stink"], ["bank", "junk"],["pink", "wing"]];
+  const [wordsIndex, setWordsIndex] = useState([0,0]);
   const [gameState, setGameState] = useState(0); //0 is off, 1 is on
   
 
@@ -92,9 +84,7 @@ function Board(){ //board item
     if(gameState === 1){
       setObj1Pos(randomObjPos(snakePos, obj2Pos)); 
       setObj2Pos(randomObjPos(snakePos, obj1Pos));
-      let randomWordIndex = getRandomInt(wordEndings.length - 1)
-      let newWord = wordEndings[randomWordIndex];
-      setCurrentWord(newWord);
+      setWordsIndex([getRandomInt(words.length - 1), getRandomInt(1)]);
       setSnakePos([[3,7], [2,7], [1,7]]);
       setSnakeDirection("Right");
       setScore(0);
@@ -110,9 +100,8 @@ function Board(){ //board item
       "Down": "Up"
     };
     //if the key press is an arrow and it isn't in the opposite direction of current motion, set it to the new direction
-    if (["Up", "Down", "Left", "Right"].includes(newDirection) && directionMap[snakeDirection] !== newDirection && canChangeDirection) { 
+    if (["Up", "Down", "Left", "Right"].includes(newDirection) && directionMap[snakeDirection] !== newDirection) { 
       setSnakeDirection(newDirection);
-      //setCanChangeDirection(false); not working
     }
   }, [snakeDirection]);
 
@@ -150,29 +139,29 @@ function Board(){ //board item
             break;
         }
 
-        if (borderCheck(newHead) || newSnakePos.some(segment => arraysEqual(segment, newHead))) { 
+        const snakeHitItself = newSnakePos.some(segment => arraysEqual(segment, newHead))
+        if (borderCheck(newHead) || snakeHitItself) { 
           clearInterval(intervalID);
-          // setGameState(0);
+          if(snakeHitItself){
+            setGameState(0);
+          }
           return prevSnakePos;
         }
         if (arraysEqual(newHead, obj1Pos) || arraysEqual(newHead, obj2Pos)) { 
-          if(arraysEqual(newHead, obj1Pos)){
+          if((arraysEqual(newHead, obj1Pos) && wordsIndex[1] == 0) || (arraysEqual(newHead, obj2Pos) && wordsIndex[1] == 1)){
             setObj1Pos(randomObjPos(snakePos, obj2Pos));
             setObj2Pos(randomObjPos(snakePos, obj1Pos));
             setScore(score + 1);
             newSnakePos.unshift(newHead); 
-            let randomWordIndex = getRandomInt(wordEndings.length - 1)
-            let newWord = wordEndings[randomWordIndex];
-            setCurrentWord(newWord);
+            setWordsIndex([getRandomInt(words.length - 1), getRandomInt(1)]);
             setMessage("Good Job");//temp
           }
-          if(arraysEqual(newHead, obj2Pos)){
+          else{
             clearInterval(intervalID);
             setMessage("Oops wrong image");//temp
-            // setGameState(0);
             return prevSnakePos;
           }
-        } else { 
+        } else {
           newSnakePos.pop(); 
           newSnakePos.unshift(newHead);
         }
@@ -196,7 +185,7 @@ function Board(){ //board item
       if(isSnake){ //if the tile is a snake, style "snake"
         if(arraysEqual(tilePos, snakePos[0])){ //snake head
           tiles.push( //temp
-            <div className="snake" key={`tile-${index}`} >{currentWord}</div> //put current word on snake front tile
+            <div className="snake" key={`tile-${index}`} >{wordToEnding(words[wordsIndex[0]][wordsIndex[1]])}</div> //put current word on snake front tile
           )
         }
         else{
@@ -210,13 +199,13 @@ function Board(){ //board item
           <div key={`tile-${index}`} className='border' ></div>
         );
       }
-      else if(arraysEqual(obj1Pos, tilePos) || arraysEqual(obj2Pos, tilePos)){
+      else if((arraysEqual(obj1Pos, tilePos) || arraysEqual(obj2Pos, tilePos)) && gameState == 1){
         let num;
         if(arraysEqual(obj1Pos, tilePos)) num = 0;
         if(arraysEqual(obj2Pos, tilePos)) num = 1;
         const className = index % 2 === 0 ? 'tile1' : 'tile2';
         tiles.push(
-          <div key={`tile-${index}`} className={className} style={{ backgroundImage: `url(${wordImages(currentWord, num)})`, backgroundSize: 'cover' }}></div>
+          <div key={`tile-${index}`} className={className} style={{ backgroundImage: `url(${wordImages(words, wordsIndex, num)})`, backgroundSize: 'cover' }}></div>
         );
       }
       else{ //print tile with green background
